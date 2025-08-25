@@ -17,10 +17,15 @@ This project sets up a reproducible pipeline to ingest public housing datasets (
 
 .
 ├─ dags/ # Airflow DAG definitions (scheduling/orchestration)
+
 ├─ pipelines/ # Python modules for ETL, feature engineering, training, evaluation
+
 ├─ airflow/
+
 │ └─ tmp/ # Local volume for logs/tmp state when running in Docker
+
 ├─ docker-compose.yaml # Local Airflow stack
+
 └─ .gitignore
 
 
