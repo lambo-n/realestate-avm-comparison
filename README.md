@@ -57,6 +57,7 @@ It works in two phases:
 │   ├── analysis_pipeline.py                # AnalysisPipeline: EDA plots
 │   └── ml_pipeline.py                      # ML_Pipeline: training, evaluation, forecasting
 ├── docker-compose.yaml                     # Airflow stack (webserver, scheduler, worker, Redis, Postgres)
+├── .env.example                            # Template for required environment variables
 └── .gitignore
 ```
 
@@ -67,8 +68,8 @@ It works in two phases:
 - **Docker Desktop** with WSL2 backend enabled (tested on Windows)
 - **Apache Airflow 2.5.1** — provided via Docker image in `docker-compose.yaml`; no separate local install required
 - **AWS account** with:
-  - An S3 bucket named `zillow-housing-data-storage`
-  - An RDS PostgreSQL instance accessible from your machine (connection details are hardcoded in the ETL DAG — update them to match your setup)
+  - An S3 bucket for raw and ML artifact storage
+  - An RDS PostgreSQL instance accessible from your machine
   - IAM credentials with read/write access to S3 and RDS
 
 ---
@@ -84,34 +85,39 @@ cd ZestimateModelComparison
 
 ### 2. Create a `.env` file
 
-Create a `.env` file in the project root with your AWS credentials:
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
 
 ```env
+# AWS credentials
 AWS_ACCESS_KEY_ID=your_access_key_here
 AWS_SECRET_ACCESS_KEY=your_secret_key_here
-```
+AWS_REGION=us-east-1
 
-These are injected into all Airflow containers via `docker-compose.yaml`. Do not commit this file — it is already in `.gitignore`.
+# S3
+S3_BUCKET=your-s3-bucket-name
+GOLD_BUCKET=your-s3-bucket-name   # can be the same as S3_BUCKET
 
-### 3. Configure your AWS RDS connection
-
-Open `dags/zillow_ETL_housing_data.py` and update the database connection block near the top of the file to match your RDS instance:
-
-```python
-DB_HOSTNAME = "your-rds-endpoint.amazonaws.com"
-DB_PORT = 5432
-DB_NAME = "postgres"
-DB_USER = "your_db_user"
-DB_TABLE_NAME = "zillow-merged-data"
-```
-
-Set the `DB_PASSWORD` environment variable in your `.env` file:
-
-```env
+# RDS PostgreSQL
+DB_HOSTNAME=your-rds-endpoint.amazonaws.com
+DB_USER=your_db_user
 DB_PASSWORD=your_db_password
+DB_NAME=postgres
+DB_TABLE_NAME=zillow-merged-data
+
+# ZHVF forecast reference
+ZHVF_FILE_NAME=zhvf_latest.csv
+ZHVF_COL_H1=2025-07-31
+ZHVF_COL_H3=2025-09-30
+ZHVF_COL_H12=2026-06-30
 ```
 
-### 4. Create required local directories
+All values are injected into the Airflow containers via `docker-compose.yaml`. Do not commit `.env` — it is already in `.gitignore`.
+
+### 3. Create required local directories
 
 Airflow expects these directories to exist before startup:
 
@@ -125,7 +131,7 @@ On Windows (PowerShell):
 New-Item -ItemType Directory -Force -Path logs, plugins
 ```
 
-### 5. Start the Airflow stack
+### 4. Start the Airflow stack
 
 ```bash
 docker-compose up
@@ -143,7 +149,7 @@ Default Airflow login: `airflow` / `airflow`
 
 First startup takes a few minutes while `airflow-init` runs database migrations and creates the admin user.
 
-### 6. Install Python dependencies inside the containers
+### 5. Install Python dependencies inside the containers
 
 The DAGs require additional Python packages (boto3, scikit-learn, plotly, sqlalchemy, etc.). Add them to the `_PIP_ADDITIONAL_REQUIREMENTS` variable in your `.env`:
 
@@ -195,7 +201,7 @@ Run this after the ETL pipeline has successfully populated the RDS table.
 
 ## Notes
 
-- **ZHVF reference columns are hardcoded** in the ML DAG. If you update `dags/zhvf_latest.csv` to a newer Zillow forecast file, update the `ZHVF_COL_H1`, `ZHVF_COL_H3`, and `ZHVF_COL_H12` variables in the DAG to match the new date column names.
+- **ZHVF reference columns are configured via `.env`**. If you update `dags/zhvf_latest.csv` to a newer Zillow forecast file, update `ZHVF_COL_H1`, `ZHVF_COL_H3`, and `ZHVF_COL_H12` in your `.env` to match the new date column names.
 - The ETL DAG **replaces** the RDS table on each run (idempotent). Re-running it will overwrite existing data.
 - The `pipelines/` package is mounted into the container at `/opt/airflow/pipelines` and added to `PYTHONPATH`, so DAGs can import from it directly without packaging.
 - Tested on **Docker Desktop with WSL2 on Windows**.
