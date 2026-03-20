@@ -1,2 +1,5 @@
 .env
 CLAUDE.md
+logs/
+*.pyc
+__pycache__/

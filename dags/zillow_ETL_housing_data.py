@@ -13,13 +13,13 @@ import sqlalchemy
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 TMP_DIR = "/opt/airflow/tmp"
 
-DB_HOSTNAME = "zillow-silver-postgresql-rdb.c4fkgcky4zra.us-east-1.rds.amazonaws.com"
+DB_HOSTNAME = os.getenv("DB_HOSTNAME")
 DB_PORT = 5432
-DB_NAME = "postgres"
-DB_USER = "lambo"
-DB_TABLE_NAME = "zillow-merged-data"
+DB_NAME = os.getenv("DB_NAME", "postgres")
+DB_USER = os.getenv("DB_USER")
+DB_TABLE_NAME = os.getenv("DB_TABLE_NAME", "zillow-merged-data")
 
-S3_BUCKET = "zillow-housing-data-storage"
+S3_BUCKET = os.getenv("S3_BUCKET")
 S3_PREFIX = "raw-zillow-data/"
 
 # ---- SOURCE FILES ----
@@ -155,7 +155,7 @@ def upload_to_relational_db(csv_path: str):
     if "Date" in df.columns:
         df["Date"] = df["Date"].astype(str)
 
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "El3ph4nt6757:)1AS")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
 
     engine = sqlalchemy.create_engine(
         f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOSTNAME}:{DB_PORT}/{DB_NAME}",

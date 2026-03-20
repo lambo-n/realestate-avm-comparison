@@ -22,19 +22,19 @@ import pandas as pd
 import sqlalchemy
 
 # --- Config ---
-S3_BUCKET = "zillow-housing-data-storage"   # silver/ML artifacts bucket
+S3_BUCKET = os.getenv("S3_BUCKET")          # silver/ML artifacts bucket
 S3_PREFIX = "zillow-housing-ml"
 S3_REGION = "us-east-1"
 
 # Gold layer destination
-GOLD_BUCKET = "zillow-housing-data-storage"
+GOLD_BUCKET = os.getenv("GOLD_BUCKET", os.getenv("S3_BUCKET"))
 GOLD_PREFIX = "zillow-housing-ml"
 
-DB_HOST = "zillow-silver-postgresql-rdb.c4fkgcky4zra.us-east-1.rds.amazonaws.com"
-DB_USER = "lambo"
-DB_PASS = "El3ph4nt6757:)1AS"
-DB_NAME = "postgres"
-TABLE_NAME = "zillow-merged-data"
+DB_HOST = os.getenv("DB_HOSTNAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME", "postgres")
+TABLE_NAME = os.getenv("DB_TABLE_NAME", "zillow-merged-data")
 
 PLOTS_DIR = "/opt/airflow/dags/plots"
 OUTPUTS_DIR = "/opt/airflow/dags/outputs"
